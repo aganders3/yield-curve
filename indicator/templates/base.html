@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <title>The Yield Curve</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.2/Chart.bundle.min.js"></script>
+  </head>
+
+  <body>
+    <div id="content-outer">
+      <h1>The Yield Curve for {{ date }}</h1>
+        <div id="content-inner">
+          <!-- <h1>{{ data }}</h1> -->
+            <div id="chart" style="width:75%">
+              <canvas id="chartCanvas"></canvas>
+            </div>
+            <script>
+              var ctx = document.getElementById("chartCanvas");
+              var chart = new Chart(ctx, {
+                  // The type of chart we want to create
+                  type: 'line',
+
+                  // The data for our dataset
+                  data: {
+                      labels: ["1 Month", "3 Months", "6 Months", "1 Year",
+                               "2 Years", "3 Years", "5 Years", "7 Years",
+                               "10 Years", "20 Years", "30 Years"],
+                      datasets: [{
+                        label: "{{ date }}",
+                        borderColor: 'rgb(55, 50, 132)',
+                        backgroundColor: 'rgba(0, 0, 0, 0)',
+                        data: {{ data }},
+                      }]
+                  },
+
+                  // Configuration options go here
+                  options: {}
+              });
+            </script>
+        </div>
+
+        <footer>
+            <p>Created by:
+                <a href="https://twitter.com/aganders3">@aganders3</a>
+            </p>
+        </footer>
+    </div>
+  </body>
+
+</html>
