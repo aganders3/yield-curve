@@ -1,0 +1,40 @@
+body {
+    font-family: sans-serif;
+    color: #7647a2;
+    background: #667FFF; /* For browsers that do not support gradients */
+    background: -webkit-linear-gradient(top, #667FFF, orange); /* For Safari 5.1 to 6.0 */
+    background: -o-linear-gradient(bottom, #667FFF, orange); /* For Opera 11.1 to 12.0 */
+    background: -moz-linear-gradient(bottom, #667FFF, orange); /* For Firefox 3.6 to 15 */
+    background: linear-gradient(to bottom, #667FFF, orange); /* Standard syntax (must be last) */
+}
+a {
+    color: #FFFFFF;
+}
+h1 {
+    color: #7647a2;
+    font-size: 36pt;
+    margin: 8pt;
+    clear: both;
+}
+h2 {
+    color: #ffffff;
+    font-size: 18pt;
+    margin: 5pt;
+    clear: both;
+}
+footer {
+    clear: both;
+    padding: 20pt;
+}
+#content-outer {
+  text-align: center;
+  margin: auto;
+  padding: 5% 10% 5% 10%;
+}
+#content-inner {
+    background: #ABADD3;
+    border-radius: 10pt;
+    width: 80%;
+    margin: 0 auto 15pt auto;
+    padding: 1%;
+}

@@ -20,19 +20,25 @@ DTAGS = ('{http://schemas.microsoft.com/ado/2007/08/dataservices}BC_1MONTH',
          '{http://schemas.microsoft.com/ado/2007/08/dataservices}BC_30YEAR')
 
 @app.route('/')
-def index():
-    yesterday = datetime.date.today() - datetime.timedelta(1)
-    data = get_data(yesterday)
-
-    return render_template('base.html',
-                           date=yesterday.isoformat(),
-                           data=data)
-
-def get_data(date=None):
-    if date is None:
+@app.route('/<int:ordinal_date>')
+def index(ordinal_date=None):
+    if ordinal_date is None:
         yesterday = datetime.date.today() - datetime.timedelta(1)
         date = yesterday
+    else:
+        try:
+            date = datetime.date.fromordinal(ordinal_date)
+        except (ValueError, OverflowError):
+            yesterday = datetime.date.today() - datetime.timedelta(1)
+            date = yesterday
 
+    data = get_data(date)
+
+    return render_template('base.html',
+                           date=date.isoformat(),
+                           data=data)
+
+def get_data(date):
     request_filter = ('day(NEW_DATE) = {} and '
                       'month(NEW_DATE) = {} and '
                       'year(NEW_DATE) = {}')
@@ -48,13 +54,17 @@ def get_data(date=None):
     root = ET.fromstring(response.text)
 
     entry = root.find("{http://www.w3.org/2005/Atom}entry")
-    content = entry.find("{http://www.w3.org/2005/Atom}content")
 
-    data_xml = content[0]
-    data = []
-    for d in data_xml:
-        if d.tag in DTAGS:
-            data.append(float(d.text))
+    if entry is not None:
+        content = entry.find("{http://www.w3.org/2005/Atom}content")
+
+        data_xml = content[0]
+        data = []
+        for d in data_xml:
+            if d.tag in DTAGS:
+                data.append(float(d.text))
+    else:
+        data = None
 
     return data
 
