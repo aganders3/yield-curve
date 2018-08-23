@@ -1,0 +1,9 @@
+server {
+    listen 80;
+    server_name 142.93.240.56;
+
+    location / {
+        include proxy_params;
+        proxy_pass http://unix:/var/www/indicator/indicator.sock;
+    }
+}

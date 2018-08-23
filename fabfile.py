@@ -4,18 +4,14 @@ import os
 import getpass
 
 # create a new droplet if needed (-N)
-# create new user (sudoer)
-# copy SSH key to server, disable password
 
 APP_NAME = 'indicator'
-URL = 'market-weather.com'
 
 USER = 'aganders3'
 PUB_KEY = '~/.ssh/id_rsa.pub'
 
 @task
-def new_user(c, username=USER, pubkey_file=PUB_KEY):
-
+def adduser(c, username=USER, pubkey_file=PUB_KEY):
     # create a new user and make it a sudoer
     new_pass = getpass.getpass("Enter a password for the new user")
     c.run('adduser --disabled-password --gecos "" {}'.format(username))
@@ -34,7 +30,7 @@ def new_user(c, username=USER, pubkey_file=PUB_KEY):
     c.run('chmod 600 /home/{}/.ssh/authorized_keys'.format(username))
 
 @task
-def setup(c):
+def init(c):
     # set up UFW (firewall) to allow OpenSSH
 
     # install python3-pip python3-dev nginx
@@ -53,10 +49,11 @@ def setup(c):
     with c.cd('/var/repo/{}.git/hooks'.format(APP_NAME)):
         c.run('touch post-receive')
         c.run('chmod +x post-receive')
+        # check out the files after a push
         c.run('echo "#!/bin/sh" >> post-receive')
-        c.run(('echo "git --work-tree=/var/www/domain.com '
-               '--git-dir=/var/repo/site.git checkout -f" >> post-receive'))
-
+        c.run(('echo "git --work-tree=/var/www/{0} '
+               '--git-dir=/var/repo/{0}.git checkout -f" '
+               '>> post-receive').format(APP_NAME))
 
     # set remote for local git with server name
     c.local('git remote add live ssh://{}@{}/var/repo/{}.git'.format(c.user,
@@ -68,17 +65,41 @@ def setup(c):
     c.run('/var/www/{0}/{0}_env/bin/pip install flask gunicorn'.format(APP_NAME))
 
     # set up UFW to allow nginx
-
-    # push up systemd startup script
-    # push up initial DB
-    # add any cron job(s)
-
-    # install gunicorn and start it
-
-    # push nginx config files, start it
-
     # set up SSH with Let's Encrypt
 
+@task
+def update(c):
+    pass
+    # git-push live
+    # copy indicator.nginx to sites-available
+    # copy systemd file to /etc/systemd/system/indicator.service
+    # add any cron job(s)
+
+@task
+def start(c):
+    pass
+    # start gunicorn
+    # link nginx conf file to sites-enabled
+    # sudo ln -s /etc/nginx/sites-available/myproject /etc/nginx/sites-enabled
+    # restart nginx
+    # c.run(systemctl restart nginx)
+
+@task
+def stop(c):
+    pass
+    # stop gunicorn
+    # unlink nginx conf file to sites-enabled
+    # sudo ln -s /etc/nginx/sites-available/myproject /etc/nginx/sites-enabled
+    # restart nginx
+    # c.run(systemctl restart nginx)
+
+@task
+def push_db(c):
+    pass
+
+@task
+def pull_db(c):
+    pass
 
 
 
