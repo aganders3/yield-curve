@@ -1,0 +1,4 @@
+*.db
+indicator/schema
+indicator.egg-info
+
