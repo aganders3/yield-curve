@@ -3,7 +3,7 @@ Description=Gunicorn instance to serve indicator
 After=network.target
 
 [Service]
-User=sammy
+User=www-data
 Group=www-data
 WorkingDirectory=/var/www/indicator
 Environment="PATH=/var/www/indicator/indicator_env/bin"

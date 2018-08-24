@@ -1,4 +1,12 @@
 from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
+
+from config import Config
 
 app = Flask(__name__)
-from indicator import views
+
+app.config.from_object(Config)
+
+db = SQLAlchemy(app)
+
+from indicator import views, models
