@@ -18,11 +18,14 @@ def index(ordinal_date=None):
             date = yesterday
 
     yield_rates = data.get_yield_rates(date)
-    rates_only = [yield_rates['m1'], yield_rates['m3'], yield_rates['m6'],
-                  yield_rates['y1'], yield_rates['y2'], yield_rates['y3'],
-                  yield_rates['y5'], yield_rates['y7'], yield_rates['y10'],
-                  yield_rates['y1'], yield_rates['y2']]
 
+    if yield_rates is not None:
+        rates_only = [yield_rates['m1'], yield_rates['m3'], yield_rates['m6'],
+                      yield_rates['y1'], yield_rates['y2'], yield_rates['y3'],
+                      yield_rates['y5'], yield_rates['y7'], yield_rates['y10'],
+                      yield_rates['y20'], yield_rates['y30']]
+    else:
+        rates_only = []
 
     return render_template('base.html',
                            date=date.isoformat(),

@@ -1,4 +1,4 @@
-from indicator import db
+from indicator import models
 
 import requests
 import datetime
@@ -18,11 +18,14 @@ DTAGS = {(XML_NS + 'BC_1MONTH') : 'm1',
          (XML_NS + 'BC_20YEAR') : 'y20',
          (XML_NS + 'BC_30YEAR') : 'y30'}
 
-def get_yield_rates(date, db=db):
+def get_yield_rates(date):
     # first check the database
     # try to look it up if it's not there
-    if db is None:
-        return _get_yield_rates(date)
+    rates = models.YieldRates.query.filter_by(date=date).first()._values_as_dict()
+    if rates is None:
+        rates = _get_yield_rates(date)
+
+    return rates
 
 def _get_yield_rates(date):
     request_filter = ('day(NEW_DATE) = {} and '
