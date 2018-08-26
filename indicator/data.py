@@ -21,9 +21,11 @@ DTAGS = {(XML_NS + 'BC_1MONTH') : 'm1',
 def get_yield_rates(date):
     # first check the database
     # try to look it up if it's not there
-    rates = models.YieldRates.query.filter_by(date=date).first()._values_as_dict()
-    if rates is None:
+    rates_from_db = models.YieldRates.query.filter_by(date=date).first()
+    if rates_from_db is None:
         rates = _get_yield_rates(date)
+    else:
+        rates = rates_from_db._values_as_dict()
 
     return rates
 
