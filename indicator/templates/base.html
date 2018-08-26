@@ -60,7 +60,8 @@
         firstDay: 1,
         minDate: new Date(1990, 0, 1),
         maxDate: today,
-        yearRange: [1989, today.getFullYear() + 1]
+        yearRange: [1989, today.getFullYear() + 1],
+        disableWeekends: true
     });
 
     document.getElementById('addDataset').addEventListener('click', function() {
