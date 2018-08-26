@@ -7,7 +7,7 @@ User=www-data
 Group=www-data
 WorkingDirectory=/var/www/indicator
 Environment="PATH=/var/www/indicator/indicator_env/bin"
-ExecStart=/var/www/indicator/indicator_env/bin/gunicorn --workers 3 --bind unix:indicator.sock -m 007 wsgi:app
+ExecStart=/var/www/indicator/indicator_env/bin/gunicorn --workers 3 --bind unix:/var/www/indicator/indicator.sock -m 007 wsgi:app
 
 [Install]
 WantedBy=multi-user.target
