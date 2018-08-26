@@ -62,17 +62,24 @@ def init(c):
 
     # create app virtual environment and install deps
     c.run('virtualenv /var/www/{0}/{0}_env'.format(APP_NAME))
-    c.run('/var/www/{0}/{0}_env/bin/pip install flask gunicorn'.format(APP_NAME))
+    # c.run('/var/www/{0}/{0}_env/bin/pip install flask gunicorn'.format(APP_NAME))
 
     # set up UFW to allow nginx
     # set up SSH with Let's Encrypt
 
 @task
 def update(c):
-    pass
-    # git-push live
+    c.local('git push live')
+
+    # update venv
+    c.run('/var/www/{0}/{0}_env/bin/pip install -r requirements.txt'.format(APP_NAME))
+
     # copy indicator.nginx to sites-available
+    c.run('cp {0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
+
     # copy systemd file to /etc/systemd/system/indicator.service
+    c.run('cp {}.service /etc/systemd/system/'.format(APP_NAME))
+
     # add any cron job(s)
 
 @task
@@ -92,6 +99,16 @@ def stop(c):
     # sudo ln -s /etc/nginx/sites-available/myproject /etc/nginx/sites-enabled
     # restart nginx
     # c.run(systemctl restart nginx)
+
+@task
+def db_init(c):
+    c.run('source /var/www/{0}/{0}_env/bin/activate'.format(APP_NAME))
+    c.run('python -c "from {} import db, db.create_all()"'.format(APP_NAME))
+    # c.run('chown root:indicator /var/www/{0}/{0}.db'.format(APP_NAME))
+
+@task
+def db_kill(c):
+    pass
 
 @task
 def push_db(c):
