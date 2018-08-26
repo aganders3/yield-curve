@@ -86,11 +86,10 @@ def update(c):
         # link indicator.nginx to sites-available
         c.run('rm -f /etc/nginx/sites-enabled/{}'.format(APP_NAME))
         c.run('rm -f /etc/nginx/sites-available/{}'.format(APP_NAME))
-        print("LINKING NGINX BLOCK TO SITES-AVAILABLE")
-        c.run('ln -s {0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
+        c.run('ln -s /var/www/{0}/{0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
 
         # enable systemd service
-        # c.run('systemctl disable {}'.format(APP_NAME))
+        c.run('systemctl disable {}'.format(APP_NAME))
         c.run('systemctl enable /var/www/{0}/{0}.service'.format(APP_NAME))
 
     # add any cron job(s)
