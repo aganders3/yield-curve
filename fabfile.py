@@ -71,14 +71,15 @@ def init(c):
 def update(c):
     c.local('git push live')
 
-    # update venv
-    c.run('/var/www/{0}/{0}_env/bin/pip install -r requirements.txt'.format(APP_NAME))
+    with c.cd('/var/www/{0}'.format(APP_NAME)):
+        # update venv
+        c.run('./{}_env/bin/pip install -r requirements.txt'.format(APP_NAME))
 
-    # copy indicator.nginx to sites-available
-    c.run('cp {0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
+        # copy indicator.nginx to sites-available
+        c.run('cp {0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
 
-    # copy systemd file to /etc/systemd/system/indicator.service
-    c.run('cp {}.service /etc/systemd/system/'.format(APP_NAME))
+        # copy systemd file to /etc/systemd/system/indicator.service
+        c.run('cp {}.service /etc/systemd/system/'.format(APP_NAME))
 
     # add any cron job(s)
 
@@ -102,9 +103,8 @@ def stop(c):
 
 @task
 def db_init(c):
-    c.run('source /var/www/{0}/{0}_env/bin/activate'.format(APP_NAME))
-    c.run('python -c "from {} import db, db.create_all()"'.format(APP_NAME))
-    # c.run('chown root:indicator /var/www/{0}/{0}.db'.format(APP_NAME))
+    with c.cd('/var/www/{0}'.format(APP_NAME)):
+        c.run('source {0}_env/bin/activate; python -c "from {0} import db\ndb.create_all()"'.format(APP_NAME))
 
 @task
 def db_kill(c):
