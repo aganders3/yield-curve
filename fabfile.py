@@ -10,24 +10,8 @@ APP_NAME = 'indicator'
 USER = 'aganders3'
 PUB_KEY = '~/.ssh/id_rsa.pub'
 
-@task
-def adduser(c, username=USER, pubkey_file=PUB_KEY):
-    # create a new user and make it a sudoer
-    new_pass = getpass.getpass("Enter a password for the new user")
-    c.run('adduser --disabled-password --gecos "" {}'.format(username))
-    c.run('usermod -aG sudo {}'.format(username))
-    c.run('echo "{}:{}" | chpasswd'.format(username, new_pass))
-
-    # add public key
-    with open(os.path.expanduser(pubkey_file)) as fd:
-        ssh_key = fd.readline().strip()
-
-    c.run('mkdir -p -m 700 /home/{}/.ssh'.format(username))
-    c.run('chown {0}:{0} /home/{0}/.ssh'.format(username))
-    c.run('touch /home/{}/.ssh/authorized_keys'.format(username))
-    c.run('echo "{}" >> /home/{}/.ssh/authorized_keys'.format(ssh_key, username))
-    c.run('chown {0}:{0} /home/{0}/.ssh/authorized_keys'.format(username))
-    c.run('chmod 600 /home/{}/.ssh/authorized_keys'.format(username))
+NGINX_USER = 'www-data'
+NGINX_USER_GROUP = 'www-data'
 
 @task
 def init(c):
@@ -60,12 +44,36 @@ def init(c):
                                                                      c.host,
                                                                      APP_NAME))
 
-    # create app virtual environment and install deps
+    # create app virtual environment
     c.run('virtualenv /var/www/{0}/{0}_env'.format(APP_NAME))
-    # c.run('/var/www/{0}/{0}_env/bin/pip install flask gunicorn'.format(APP_NAME))
+
+    # create a directory for the gunicorn socket(s)
+    c.run('mkdir /run/gunicorn')
+    c.run('chown root:www-data /run/gunicorn')
+    c.run('chmod 770 /run/gunicorn')
+    c.run('chmod g+s /run/gunicorn')
 
     # set up UFW to allow nginx
     # set up SSH with Let's Encrypt
+
+@task
+def adduser(c, username=USER, pubkey_file=PUB_KEY):
+    # create a new user and make it a sudoer
+    new_pass = getpass.getpass("Enter a password for the new user")
+    c.run('adduser --disabled-password --gecos "" {}'.format(username))
+    c.run('usermod -aG sudo {}'.format(username))
+    c.run('echo "{}:{}" | chpasswd'.format(username, new_pass))
+
+    # add public key
+    with open(os.path.expanduser(pubkey_file)) as fd:
+        ssh_key = fd.readline().strip()
+
+    c.run('mkdir -p -m 700 /home/{}/.ssh'.format(username))
+    c.run('chown {0}:{0} /home/{0}/.ssh'.format(username))
+    c.run('touch /home/{}/.ssh/authorized_keys'.format(username))
+    c.run('echo "{}" >> /home/{}/.ssh/authorized_keys'.format(ssh_key, username))
+    c.run('chown {0}:{0} /home/{0}/.ssh/authorized_keys'.format(username))
+    c.run('chmod 600 /home/{}/.ssh/authorized_keys'.format(username))
 
 @task
 def update(c):
@@ -75,22 +83,26 @@ def update(c):
         # update venv
         c.run('./{}_env/bin/pip install -r requirements.txt'.format(APP_NAME))
 
-        # copy indicator.nginx to sites-available
-        c.run('cp {0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
+        # link indicator.nginx to sites-available
+        c.run('rm -f /etc/nginx/sites-enabled/{}'.format(APP_NAME))
+        c.run('rm -f /etc/nginx/sites-available/{}'.format(APP_NAME))
+        print("LINKING NGINX BLOCK TO SITES-AVAILABLE")
+        c.run('ln -s {0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
 
-        # copy systemd file to /etc/systemd/system/indicator.service
-        c.run('cp {}.service /etc/systemd/system/'.format(APP_NAME))
+        # enable systemd service
+        # c.run('systemctl disable {}'.format(APP_NAME))
+        c.run('systemctl enable /var/www/{0}/{0}.service'.format(APP_NAME))
 
     # add any cron job(s)
 
 @task
 def start(c):
-    pass
     # start gunicorn
+    c.run('systemctl start indicator')
     # link nginx conf file to sites-enabled
-    # sudo ln -s /etc/nginx/sites-available/myproject /etc/nginx/sites-enabled
+    c.run('ln -s /etc/nginx/sites-available/{0} /etc/nginx/sites-enabled/{0}'.format(APP_NAME))
     # restart nginx
-    # c.run(systemctl restart nginx)
+    c.run('systemctl restart nginx')
 
 @task
 def stop(c):
@@ -103,11 +115,15 @@ def stop(c):
 
 @task
 def db_init(c):
+    # TODO: set SQLAlchemy environment variable
+    # check if DB already exists, request db_kill if you really want to
+    # overwrite it
     with c.cd('/var/www/{0}'.format(APP_NAME)):
         c.run('source {0}_env/bin/activate; python -c "from {0} import db\ndb.create_all()"'.format(APP_NAME))
 
 @task
 def db_kill(c):
+    # erase the old db (ask for confirmation)
     pass
 
 @task
@@ -117,7 +133,4 @@ def push_db(c):
 @task
 def pull_db(c):
     pass
-
-
-
 
