@@ -1,9 +1,9 @@
 import os
 
-basedir = os.path.abspath(os.path.dirname(__file__))
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 class Config():
-    default_db_path = os.path.join(os.environ.get('DATABASE_BASEDIR'), 'indicator.db')
+    basedir = os.environ.get('DB_BASE_DIR') or BASE_DIR
     SQLALCHEMY_DATABASE_URI =  default_db_path or \
         'sqlite:///' + os.path.join(basedir, 'indicator.db')
 

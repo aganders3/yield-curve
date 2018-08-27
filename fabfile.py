@@ -91,12 +91,6 @@ def init(c):
                '--git-dir=/var/repo/{0}.git checkout -f" '
                '>> post-receive').format(APP_NAME))
 
-    # set remote for local git with server name
-    # TODO: set the remote name to be that of the droplet
-    c.local('git remote add live ssh://{}@{}/var/repo/{}.git'.format(c.user,
-                                                                     c.host,
-                                                                     APP_NAME))
-
     # create app virtual environment
     c.run('virtualenv /var/www/{0}/{0}_env'.format(APP_NAME))
 
@@ -106,7 +100,9 @@ def init(c):
     c.run('chmod 770 /run/gunicorn')
     c.run('chmod g+s /run/gunicorn')
 
-    c.run('echo "DATABASE_BASEDIR=\"/run/gunicorn\"" >> /etc/environment')
+    # set environment variables for config
+    c.run(('echo "DB_BASE_DIR=\"/run/gunicorn\"" '
+           '>> /etc/profile.d/{}.sh').format(APP_NAME))
 
     # set up UFW to allow nginx and OpenSSH
     c.run('ufw allow OpenSSH')
@@ -115,6 +111,11 @@ def init(c):
     c.run('ufw status')
 
     # TODO: set up SSH with Let's Encrypt
+
+    # set remote for local git with server name
+    # TODO: set the remote name to be that of the droplet
+    c.local(('git remote add live '
+             'ssh://{}@{}/var/repo/{}.git').format(c.user, c.host, APP_NAME))
 
     # push up the code
     c.local('git push --set-upstream live master')
