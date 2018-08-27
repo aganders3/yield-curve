@@ -2,21 +2,73 @@ from fabric import task
 
 import os
 import getpass
+import subprocess
 
 # create a new droplet if needed (-N)
 
 APP_NAME = 'indicator'
+DOMAIN = 'market-weather.com'
 
 USER = 'aganders3'
 PUB_KEY = '~/.ssh/id_rsa.pub'
+PUB_KEY_MD5 = '96:83:bc:22:5f:ad:92:97:cd:20:e8:2f:3d:51:8c:7c'
 
 NGINX_USER = 'www-data'
 NGINX_USER_GROUP = 'www-data'
 
 @task
-def init(c):
-    # set up UFW (firewall) to allow OpenSSH
+def create(c):
+    create_droplet = ['doctl', 'compute', 'droplet', 'create']
 
+    droplet_name = input("Enter a droplet name: ")
+    create_droplet += [droplet_name]
+
+    create_droplet += ['--size', '1gb']
+    create_droplet += ['--image', 'ubuntu-18-04-x64']
+    create_droplet += ['--region', 'nyc1']
+    create_droplet += ['--ssh-keys', PUB_KEY_MD5]
+    create_droplet += ['--region', 'nyc1']
+    create_droplet += ['--wait']
+    create_droplet += ['--format', 'ID,Name,PublicIPv4']
+    create_droplet += ['--no-header']
+
+    p = subprocess.run(create_droplet, stdout=subprocess.PIPE)
+    droplet_info = p.stdout.decode('utf-8')
+    print("Created a new droplet!")
+    print("ID\tName\tIP")
+    print(droplet_info)
+
+@task
+def destroy(c):
+    prompt = "Enter the number of a droplet to destroy it: "
+    droplet_to_destroy, droplets = select_droplet(prompt)
+
+    if droplet_to_destroy < len(droplets):
+        drop_id, drop_name, drop_ip = droplets[droplet_to_destroy].split()
+    else:
+        print("Invalid droplet selected")
+        return
+
+    delete_droplet = ['doctl', 'compute', 'droplet', 'delete']
+    delete_droplet += [str(drop_id)]
+
+    p = subprocess.run(delete_droplet)
+
+def select_droplet(prompt="Select a droplet: "):
+    list_droplets = ['doctl', 'compute', 'droplet', 'list']
+    list_droplets += ['--format', 'ID,Name,PublicIPv4']
+    list_droplets += ['--no-header']
+    p = subprocess.run(list_droplets, stdout=subprocess.PIPE)
+    droplets = p.stdout.decode('utf-8').split('\n')[:-1]
+
+    print("Index\t\tID\tName\tIP")
+    for i, droplet in enumerate(droplets):
+        print(i, ":\t", droplet)
+
+    return int(input(prompt)), droplets
+
+@task
+def init(c):
     # install python3-pip python3-dev nginx
     c.run('apt-get update')
     c.run('apt-get install python3-pip python3-dev nginx')
@@ -40,6 +92,7 @@ def init(c):
                '>> post-receive').format(APP_NAME))
 
     # set remote for local git with server name
+    # TODO: set the remote name to be that of the droplet
     c.local('git remote add live ssh://{}@{}/var/repo/{}.git'.format(c.user,
                                                                      c.host,
                                                                      APP_NAME))
@@ -47,14 +100,37 @@ def init(c):
     # create app virtual environment
     c.run('virtualenv /var/www/{0}/{0}_env'.format(APP_NAME))
 
-    # create a directory for the gunicorn socket(s)
-    c.run('mkdir /run/gunicorn')
-    c.run('chown root:www-data /run/gunicorn')
+    # create a directory for the gunicorn socket(s) and database(s)
+    c.run('mkdir -p /run/gunicorn')
+    c.run('chown root:{} /run/gunicorn'.format(NGINX_USER_GROUP))
     c.run('chmod 770 /run/gunicorn')
     c.run('chmod g+s /run/gunicorn')
 
-    # set up UFW to allow nginx
-    # set up SSH with Let's Encrypt
+    c.run('echo "DATABASE_BASEDIR=\"/run/gunicorn\"" >> /etc/environment')
+
+    # set up UFW to allow nginx and OpenSSH
+    c.run('ufw allow OpenSSH')
+    c.run('ufw allow "Nginx Full"')
+    c.run('ufw enable')
+    c.run('ufw status')
+
+    # TODO: set up SSH with Let's Encrypt
+
+    # push up the code
+    c.local('git push --set-upstream live master')
+    with c.cd('/var/www/{0}'.format(APP_NAME)):
+        # update venv
+        c.run('./{}_env/bin/pip install -r requirements.txt'.format(APP_NAME))
+
+        # link indicator.nginx to sites-available
+        c.run('rm -f /etc/nginx/sites-available/{}'.format(APP_NAME))
+        c.run('ln -s /var/www/{0}/{0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
+
+        # enable systemd service
+        c.run('systemctl enable /var/www/{0}/{0}.service'.format(APP_NAME))
+
+    # initialize the database
+    db_init(c)
 
 @task
 def adduser(c, username=USER, pubkey_file=PUB_KEY):
@@ -76,7 +152,10 @@ def adduser(c, username=USER, pubkey_file=PUB_KEY):
     c.run('chmod 600 /home/{}/.ssh/authorized_keys'.format(username))
 
 @task
-def update(c):
+def update(c, stop_server=True, start_server=True):
+    if stop_server:
+        stop(c)
+
     c.local('git push live')
 
     with c.cd('/var/www/{0}'.format(APP_NAME)):
@@ -84,7 +163,6 @@ def update(c):
         c.run('./{}_env/bin/pip install -r requirements.txt'.format(APP_NAME))
 
         # link indicator.nginx to sites-available
-        c.run('rm -f /etc/nginx/sites-enabled/{}'.format(APP_NAME))
         c.run('rm -f /etc/nginx/sites-available/{}'.format(APP_NAME))
         c.run('ln -s /var/www/{0}/{0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
 
@@ -92,12 +170,15 @@ def update(c):
         c.run('systemctl disable {}'.format(APP_NAME))
         c.run('systemctl enable /var/www/{0}/{0}.service'.format(APP_NAME))
 
-    # add any cron job(s)
+    # TODO: add any cron job(s)
+
+    if start_server:
+        start(c)
 
 @task
 def start(c):
     # start gunicorn
-    c.run('systemctl start indicator')
+    c.run('systemctl start {}'.format(APP_NAME))
     # link nginx conf file to sites-enabled
     c.run('ln -s /etc/nginx/sites-available/{0} /etc/nginx/sites-enabled/{0}'.format(APP_NAME))
     # restart nginx
@@ -105,12 +186,12 @@ def start(c):
 
 @task
 def stop(c):
-    pass
     # stop gunicorn
+    c.run('systemctl stop {}'.format(APP_NAME))
     # unlink nginx conf file to sites-enabled
-    # sudo ln -s /etc/nginx/sites-available/myproject /etc/nginx/sites-enabled
+    c.run('rm -f /etc/nginx/sites-enabled/{}'.format(APP_NAME))
     # restart nginx
-    # c.run(systemctl restart nginx)
+    c.run('systemctl restart nginx')
 
 @task
 def db_init(c):
@@ -122,14 +203,19 @@ def db_init(c):
 
 @task
 def db_kill(c):
-    # erase the old db (ask for confirmation)
-    pass
+    print("YOU ARE ABOUT TO DELETE THIS DATABASE FILE ON THE SERVER:")
+    c.run('ls -l /run/gunicorn/{}.db'.format(APP_NAME))
+    print("WARNING: THIS ACTION CANNOT BE UNDONE")
+    kill = input("ARE YOU SURE? [y/N]: ")
+    if kill == 'y':
+        c.run('rm -f /run/gunicorn/{}.db'.format(APP_NAME))
 
 @task
 def push_db(c):
-    pass
+    c.put('{}.db'.format(APP_NAME),
+          '/run/gunicorn')
 
 @task
 def pull_db(c):
-    pass
+    c.get('/run/gunicorn/{}.db'.format(APP_NAME))
 
