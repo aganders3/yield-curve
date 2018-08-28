@@ -1,1 +1,1 @@
-0 22 * * * source /var/www/indicator/indicator_env/bin/activate ; python /var/www/indicator/crawler.py -d (date "+%Y-%m-%d") 
+0 23 * * * source /var/www/indicator/indicator_env/bin/activate; export DB_BASE_DIR=/run/gunicorn; python /var/www/indicator/crawler.py -d $(date -I) 

@@ -152,6 +152,10 @@ def update(c, first_push=False, stop_server=True, start_server=True):
 
     if first_push:
         # set remote for local git with server name
+        c.local('git remote add live ' +
+                 'ssh://{}@{}/var/repo/{}.git'.format(c.user,
+                                                      c.host,
+                                                      APP_NAME))
         c.local('git push --set-upstream {} master'.format(remote_name))
     else:
         c.local('git push {}'.format(remote_name))
@@ -161,15 +165,13 @@ def update(c, first_push=False, stop_server=True, start_server=True):
         c.run('./{}_env/bin/pip install -r requirements.txt'.format(APP_NAME))
 
         # link indicator.nginx to sites-available
-        c.run('rm -f /etc/nginx/sites-available/{}'.format(APP_NAME))
-        c.run('ln -s /var/www/{0}/{0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
+        c.run('ln -f -s /var/www/{0}/{0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
 
         # enable systemd service
-        c.run('systemctl disable {}'.format(APP_NAME))
-        c.run('systemctl enable /var/www/{0}/{0}.service'.format(APP_NAME))
+        c.run('systemctl -f enable /var/www/{0}/{0}.service'.format(APP_NAME))
 
     # add any cron job(s) here
-    c.run('(crontab -u {} {}.crontab'.format(NGINX_USER, APP_NAME))
+    c.run('crontab -u {0} /var/www/{1}/{1}.crontab'.format(NGINX_USER, APP_NAME))
 
     if start_server:
         start(c)

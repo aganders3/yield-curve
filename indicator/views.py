@@ -17,7 +17,7 @@ def index(ordinal_date=None):
             yesterday = datetime.date.today() - datetime.timedelta(1)
             date = yesterday
 
-    yield_rates = data.get_yield_rates(date)
+    yield_rates, _ = data.get_yield_rates(date)
 
     if yield_rates is not None:
         rates_only = [yield_rates['m1'], yield_rates['m3'], yield_rates['m6'],

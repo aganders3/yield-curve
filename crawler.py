@@ -39,10 +39,10 @@ if __name__ == "__main__":
 
     d = start_date
     while d != (end_date + one_day):
-        rates = data.get_yield_rates(d)
+        rates, in_db = data.get_yield_rates(d)
         if not args.quiet:
             print(d, rates)
-        if rates is not None:
+        if rates is not None and not in_db:
             y = models.YieldRates(**rates)
             db.session.add(y)
         d += one_day

@@ -22,12 +22,15 @@ def get_yield_rates(date):
     # first check the database
     # try to look it up if it's not there
     rates_from_db = models.YieldRates.query.filter_by(date=date).first()
+    in_db = True
+
     if rates_from_db is None:
+        in_db = False
         rates = _get_yield_rates(date)
     else:
         rates = rates_from_db._values_as_dict()
 
-    return rates
+    return rates, in_db
 
 def _get_yield_rates(date):
     request_filter = ('day(NEW_DATE) = {} and '
