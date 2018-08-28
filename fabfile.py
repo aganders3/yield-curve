@@ -23,7 +23,7 @@ def create(c):
     droplet_name = input("Enter a droplet name: ")
     create_droplet += [droplet_name]
 
-    create_droplet += ['--size', '1gb']
+    create_droplet += ['--size', 's-1vcpu-1gb']
     create_droplet += ['--image', 'ubuntu-18-04-x64']
     create_droplet += ['--region', 'nyc1']
     create_droplet += ['--ssh-keys', PUB_KEY_MD5]
@@ -108,7 +108,7 @@ def init(c):
     c.run('chmod g+s /run/gunicorn')
 
     # set environment variables for config
-    c.run(('echo "DB_BASE_DIR=\"/run/gunicorn\"" '
+    c.run(('echo "export DB_BASE_DIR=\\"/run/gunicorn\\"" '
            '>> /etc/profile.d/{}.sh').format(APP_NAME))
 
     # set up UFW to allow nginx and OpenSSH
@@ -204,11 +204,10 @@ def stop(c):
 
 @task
 def db_init(c):
-    # TODO: set SQLAlchemy environment variable
     # check if DB already exists, request db_kill if you really want to
     # overwrite it
-    with c.cd('/var/www/{0}'.format(APP_NAME)):
-        c.run('source {0}_env/bin/activate; python -c "from {0} import db\ndb.create_all()"'.format(APP_NAME))
+    with c.cd('/var/www/{}'.format(APP_NAME)), c.prefix('export DB_BASE_DIR="/run/gunicorn"'):
+        c.run('source {0}_env/bin/activate; echo -e "from {0} import db\ndb.create_all()" | python'.format(APP_NAME))
 
 @task
 def db_kill(c):
