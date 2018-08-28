@@ -43,11 +43,13 @@ def destroy(c):
     prompt = "Enter the number of a droplet to destroy it: "
     droplet_to_destroy, droplets = select_droplet(prompt)
 
-    if droplet_to_destroy < len(droplets):
-        drop_id, drop_name, drop_ip = droplets[droplet_to_destroy].split()
-    else:
+    if (droplet_to_destroy is None or
+        droplet_to_destroy < 0 or
+        droplet_to_destroy >= len(droplets)):
         print("Invalid droplet selected")
-        return
+        return 1
+    else:
+        drop_id, drop_name, drop_ip = droplets[droplet_to_destroy].split()
 
     delete_droplet = ['doctl', 'compute', 'droplet', 'delete']
     delete_droplet += [str(drop_id)]
@@ -65,7 +67,12 @@ def select_droplet(prompt="Select a droplet: "):
     for i, droplet in enumerate(droplets):
         print(i, ":\t", droplet)
 
-    return int(input(prompt)), droplets
+    try:
+        selected = int(input(prompt))
+    except ValueError:
+        selected = None
+    finally:
+        return selected, droplets
 
 @task
 def init(c):
@@ -113,7 +120,8 @@ def init(c):
     # TODO: set up SSH with Let's Encrypt
 
     # set remote for local git with server name
-    # TODO: set the remote name to be that of the droplet
+    # TODO: set the remote name to be that of the droplet or otherwise
+    # troubleshoot the occasion where live already exists
     c.local(('git remote add live '
              'ssh://{}@{}/var/repo/{}.git').format(c.user, c.host, APP_NAME))
 
