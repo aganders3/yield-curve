@@ -46,6 +46,5 @@ if __name__ == "__main__":
             y = models.YieldRates(**rates)
             db.session.add(y)
         d += one_day
-        print(d, end_date + one_day)
 
     db.session.commit()

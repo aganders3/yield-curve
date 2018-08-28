@@ -107,10 +107,6 @@ def init(c):
     c.run('chmod 770 /run/gunicorn')
     c.run('chmod g+s /run/gunicorn')
 
-    # set environment variables for config
-    c.run(('echo "export DB_BASE_DIR=\\"/run/gunicorn\\"" '
-           '>> /etc/profile.d/{}.sh').format(APP_NAME))
-
     # set up UFW to allow nginx and OpenSSH
     c.run('ufw allow OpenSSH')
     c.run('ufw allow "Nginx Full"')
@@ -119,27 +115,14 @@ def init(c):
 
     # TODO: set up SSH with Let's Encrypt
 
-    # set remote for local git with server name
-    # TODO: set the remote name to be that of the droplet or otherwise
-    # troubleshoot the occasion where live already exists
-    c.local(('git remote add live '
-             'ssh://{}@{}/var/repo/{}.git').format(c.user, c.host, APP_NAME))
-
     # push up the code
-    c.local('git push --set-upstream live master')
-    with c.cd('/var/www/{0}'.format(APP_NAME)):
-        # update venv
-        c.run('./{}_env/bin/pip install -r requirements.txt'.format(APP_NAME))
-
-        # link indicator.nginx to sites-available
-        c.run('rm -f /etc/nginx/sites-available/{}'.format(APP_NAME))
-        c.run('ln -s /var/www/{0}/{0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
-
-        # enable systemd service
-        c.run('systemctl enable /var/www/{0}/{0}.service'.format(APP_NAME))
+    update(c, first_push=True,
+              stop_server=False,
+              start_server=False)
 
     # initialize the database
     db_init(c)
+
 
 @task
 def adduser(c, username=USER, pubkey_file=PUB_KEY):
@@ -161,11 +144,17 @@ def adduser(c, username=USER, pubkey_file=PUB_KEY):
     c.run('chmod 600 /home/{}/.ssh/authorized_keys'.format(username))
 
 @task
-def update(c, stop_server=True, start_server=True):
+def update(c, first_push=False, stop_server=True, start_server=True):
     if stop_server:
         stop(c)
 
-    c.local('git push live')
+    remote_name = input("Enter a name for the git remote destination [live]: ") or 'live'
+
+    if first_push:
+        # set remote for local git with server name
+        c.local('git push --set-upstream {} master'.format(remote_name))
+    else:
+        c.local('git push {}'.format(remote_name))
 
     with c.cd('/var/www/{0}'.format(APP_NAME)):
         # update venv
@@ -179,7 +168,8 @@ def update(c, stop_server=True, start_server=True):
         c.run('systemctl disable {}'.format(APP_NAME))
         c.run('systemctl enable /var/www/{0}/{0}.service'.format(APP_NAME))
 
-    # TODO: add any cron job(s)
+    # add any cron job(s) here
+    c.run('(crontab -u {} {}.crontab'.format(NGINX_USER, APP_NAME))
 
     if start_server:
         start(c)
