@@ -5,19 +5,20 @@ from flask import jsonify, redirect, render_template, request
 import datetime
 
 @app.route('/')
-@app.route('/<int:ordinal_date>')
-def index(ordinal_date=None):
-    if ordinal_date is None:
-        yesterday = datetime.date.today() - datetime.timedelta(1)
-        date = yesterday
-    else:
-        try:
-            date = datetime.date.fromordinal(ordinal_date)
-        except (ValueError, OverflowError):
-            yesterday = datetime.date.today() - datetime.timedelta(1)
-            date = yesterday
+@app.route('/<int:yyyy>-<int:mm>-<int:dd>')
+def index(yyyy=None, mm=None, dd=None):
+    try:
+        date = datetime.date(yyyy, mm, dd)
+    except (TypeError, ValueError, OverflowError):
+        today = datetime.date.today()
+        date = today
+
+    one_day = datetime.timedelta(1)
 
     yield_rates, _ = data.get_yield_rates(date)
+    while yield_rates is None:
+        date -= one_day
+        yield_rates, _ = data.get_yield_rates(date)
 
     if yield_rates is not None:
         rates_only = [yield_rates['m1'], yield_rates['m3'], yield_rates['m6'],
