@@ -152,7 +152,7 @@ def update(c, first_push=False, stop_server=True, start_server=True):
 
     if first_push:
         # set remote for local git with server name
-        c.local('git remote add live ' +
+        c.local('git remote add {} '.format(remote_name) +
                  'ssh://{}@{}/var/repo/{}.git'.format(c.user,
                                                       c.host,
                                                       APP_NAME))
@@ -180,8 +180,13 @@ def update(c, first_push=False, stop_server=True, start_server=True):
 def start(c):
     # start gunicorn
     c.run('systemctl start {}'.format(APP_NAME))
+
+    # remove default from sites-enabled
+    c.run('rm -f /etc/nginx/sites-enabled/default')
+
     # link nginx conf file to sites-enabled
     c.run('ln -s /etc/nginx/sites-available/{0} /etc/nginx/sites-enabled/{0}'.format(APP_NAME))
+
     # restart nginx
     c.run('systemctl restart nginx')
 

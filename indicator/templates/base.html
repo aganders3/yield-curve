@@ -43,7 +43,7 @@
                      "10 Years", "20 Years", "30 Years"],
             datasets: [{
               label: "{{ date }}",
-              borderColor: 'rgb(55, 50, 132)',
+              borderColor: 'rgb(50, 50, 128)',
               backgroundColor: 'rgba(0, 0, 0, 0)',
               data: {{ data }},
             }]
@@ -65,17 +65,36 @@
     });
 
     document.getElementById('addDataset').addEventListener('click', function() {
-      var newDataset = {
-        label: picker.toString(),
-        borderColor: 'rgb(55, 50, 132)',
-        backgroundColor: 'rgba(0, 0, 0, 0)',
-        data: {{ data }},
-        fill: false
+      getJSON("?json=true&date=" + picker.toString(),
+        function(err, data) {
+          var newDataset = {
+            label: picker.toString(),
+            borderColor: 'rgb(50, 50, 128)',
+            backgroundColor: 'rgba(0, 0, 0, 0)',
+            data: data.data,
+            fill: false
+          };
+
+          chart.data.datasets.push(newDataset);
+          window.chart.update();
+        });
+    });
+
+    var getJSON = function(url, callback) {
+      var xhr = new XMLHttpRequest();
+      xhr.open('GET', url, true);
+      xhr.responseType = 'json';
+      xhr.onload = function() {
+        var status = xhr.status;
+        if (status === 200) {
+          callback(null, xhr.response);
+        } else {
+          callback(status, xhr.response);
+        }
       };
 
-      chart.data.datasets.push(newDataset);
-      window.chart.update();
-    });
+      xhr.send();
+    };
   </script>
   </body>
 </html>
