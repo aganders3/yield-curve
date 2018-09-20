@@ -39,6 +39,11 @@ if __name__ == "__main__":
 
     d = start_date
     while d != (end_date + one_day):
+        if d.weekday() == 5:
+            d += (one_day + one_day)
+            db.session.commit()
+            continue
+
         rates, in_db = data.get_yield_rates(d)
         if not args.quiet:
             print(d, rates)
