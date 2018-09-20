@@ -113,7 +113,8 @@ def init(c):
     c.run('ufw enable')
     c.run('ufw status')
 
-    # TODO: set up SSH with Let's Encrypt
+    # TODO: set up domain records
+    # TODO: set up SSL with Let's Encrypt
 
     # push up the code
     update(c, first_push=True,
@@ -122,7 +123,6 @@ def init(c):
 
     # initialize the database
     db_init(c)
-
 
 @task
 def adduser(c, username=USER, pubkey_file=PUB_KEY):
