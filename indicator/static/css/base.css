@@ -17,7 +17,7 @@ h1 {
     clear: both;
 }
 h2 {
-    color: #ffffff;
+    color: #7647a2;
     font-size: 18pt;
     margin: 5pt;
     clear: both;
@@ -32,7 +32,7 @@ footer {
   padding: 5% 10% 5% 10%;
 }
 #content-inner {
-    background: #ABADD3;
+    background: #D0DCFF;
     border-radius: 10pt;
     width: 80%;
     margin: 0 auto 15pt auto;

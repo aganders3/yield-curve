@@ -11,24 +11,25 @@
 
   <body>
     <div id="content-outer">
-      <h1>The Yield Curve for {{ date }}</h1>
-        <div id="content-inner">
+      <h1>The Yield Curve</h1>
+      <h2>{{ date }}</h2>
+      <div id="content-inner">
 
-            <div id="chart">
-              <canvas id="chartCanvas"></canvas>
-            </div>
+          <div id="chart">
+            <canvas id="chartCanvas"></canvas>
+          </div>
 
-            <label for="datepicker">Date:</label>
-            <input type="text" id="datepicker">
-            <button id="addDataset">Add Dataset</button>
+          <label for="datepicker">Date:</label>
+          <input type="text" id="datepicker">
+          <button id="addDataset">Add Dataset</button>
 
-        </div>
+      </div>
 
-        <footer>
-            <p>Created by
-                <a href="https://twitter.com/aganders3">@aganders3</a>
-            </p>
-        </footer>
+      <footer>
+          <p>Created by
+              <a href="https://twitter.com/aganders3">@aganders3</a>
+          </p>
+      </footer>
     </div>
   <script>
     var ctx = document.getElementById("chartCanvas");
@@ -43,7 +44,7 @@
                      "10 Years", "20 Years", "30 Years"],
             datasets: [{
               label: "{{ date }}",
-              borderColor: 'rgb(50, 50, 128)',
+              borderColor: 'rgb(128, 128, 255)',
               backgroundColor: 'rgba(0, 0, 0, 0)',
               data: {{ data }},
             }]
@@ -51,6 +52,7 @@
         options: {}
     });
   </script>
+
   <script>
     var today = new Date();
     var picker = new Pikaday(
@@ -65,11 +67,11 @@
     });
 
     document.getElementById('addDataset').addEventListener('click', function() {
-      getJSON("?json=true&date=" + picker.toString(),
+      getJSON("yields/" + picker.toString(),
         function(err, data) {
           var newDataset = {
             label: picker.toString(),
-            borderColor: 'rgb(50, 50, 128)',
+            borderColor: 'rgb(128, 128, ' + (255 - 32 * chart.data.datasets.length) + ')',
             backgroundColor: 'rgba(0, 0, 0, 0)',
             data: data.data,
             fill: false

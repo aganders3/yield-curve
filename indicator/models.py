@@ -16,6 +16,9 @@ class YieldRates(db.Model):
     y30 = db.Column(db.Float)
 
     def __repr__(self):
+        if self.id is None:
+            return ""
+
         repr_str = self.date.isoformat()
 
         rates = []

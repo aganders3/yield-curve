@@ -18,12 +18,15 @@ DTAGS = {(XML_NS + 'BC_1MONTH') : 'm1',
          (XML_NS + 'BC_20YEAR') : 'y20',
          (XML_NS + 'BC_30YEAR') : 'y30'}
 
-def get_yield_rates(date):
+def get_yield_rates(date=None):
+    if date is None:
+        return models.YieldRates.query.all(), True
+
     # first check the database
-    # try to look it up if it's not there
     rates_from_db = models.YieldRates.query.filter_by(date=date).first()
     in_db = True
 
+    # try to look it up if it's not in the database yet
     if rates_from_db is None:
         in_db = False
         rates = _get_yield_rates(date)
