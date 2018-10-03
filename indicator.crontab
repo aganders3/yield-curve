@@ -1,2 +1,2 @@
 DB_BASE_DIR=/run/gunicorn 
-* */4 * * * /var/www/indicator/indicator_env/bin/python /var/www/indicator/crawler.py -d $(date -I) 
+5 * * * * /var/www/indicator/indicator_env/bin/python /var/www/indicator/crawler.py -d $(date -I) 
