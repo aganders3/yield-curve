@@ -78,7 +78,7 @@ def select_droplet(prompt="Select a droplet: "):
 def init(c):
     # install python3-pip python3-dev nginx
     c.run('apt-get update')
-    c.run('apt-get install python3-pip python3-dev nginx')
+    c.run('apt-get install python3-pip python3-dev nginx -y')
 
     # create the working directory for the app
     c.run('pip3 install virtualenv')
@@ -164,7 +164,7 @@ def update(c, first_push=False, stop_server=True, start_server=True):
         # update venv
         c.run('./{}_env/bin/pip install -r requirements.txt'.format(APP_NAME))
 
-        # link indicator.nginx to sites-available
+        # link <app-name>.nginx to sites-available
         c.run('ln -f -s /var/www/{0}/{0}.nginx /etc/nginx/sites-available/{0}'.format(APP_NAME))
 
         # enable systemd service
@@ -205,6 +205,7 @@ def db_init(c):
     # overwrite it
     with c.cd('/var/www/{}'.format(APP_NAME)), c.prefix('export DB_BASE_DIR="/run/gunicorn"'):
         c.run('source {0}_env/bin/activate; echo -e "from {0} import db\ndb.create_all()" | python'.format(APP_NAME))
+    c.run('chmod 660 /run/gunicorn/{0}.db'.format(APP_NAME))
 
 @task
 def db_kill(c):
