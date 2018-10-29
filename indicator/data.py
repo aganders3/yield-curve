@@ -6,32 +6,55 @@ import xml.etree.ElementTree as ET
 
 XML_NS = '{http://schemas.microsoft.com/ado/2007/08/dataservices}'
 
-DTAGS = {(XML_NS + 'BC_1MONTH') : 'm1',
-         (XML_NS + 'BC_3MONTH') : 'm3',
-         (XML_NS + 'BC_6MONTH') : 'm6',
-         (XML_NS + 'BC_1YEAR')  : 'y1',
-         (XML_NS + 'BC_2YEAR')  : 'y2',
-         (XML_NS + 'BC_3YEAR')  : 'y3',
-         (XML_NS + 'BC_5YEAR')  : 'y5',
-         (XML_NS + 'BC_7YEAR')  : 'y7',
-         (XML_NS + 'BC_10YEAR') : 'y10',
-         (XML_NS + 'BC_20YEAR') : 'y20',
-         (XML_NS + 'BC_30YEAR') : 'y30'}
+DTAGS = ['BC_1MONTH', 'BC_3MONTH', 'BC_6MONTH', 'BC_1YEAR', 'BC_2YEAR',
+        'BC_3YEAR', 'BC_5YEAR', 'BC_7YEAR', 'BC_10YEAR', 'BC_20YEAR',
+        'BC_30YEAR']
+TIMES = ['m1', 'm3', 'm6', 'y1', 'y2', 'y3', 'y5', 'y7', 'y10', 'y20', 'y30']
+
+DTAGS_DICT = {(XML_NS + dtag) : time for dtag, time in zip(DTAGS, TIMES)}
+
+# DTAGS_DICT = {(XML_NS + 'BC_1MONTH') : 'm1',
+#               (XML_NS + 'BC_3MONTH') : 'm3',
+#               (XML_NS + 'BC_6MONTH') : 'm6',
+#               (XML_NS + 'BC_1YEAR')  : 'y1',
+#               (XML_NS + 'BC_2YEAR')  : 'y2',
+#               (XML_NS + 'BC_3YEAR')  : 'y3',
+#               (XML_NS + 'BC_5YEAR')  : 'y5',
+#               (XML_NS + 'BC_7YEAR')  : 'y7',
+#               (XML_NS + 'BC_10YEAR') : 'y10',
+#               (XML_NS + 'BC_20YEAR') : 'y20',
+#               (XML_NS + 'BC_30YEAR') : 'y30'}
 
 def get_yield_rates(date=None):
     if date is None:
         return models.YieldRates.query.all(), True
 
-    # first check the database
-    rates_from_db = models.YieldRates.query.filter_by(date=date).first()
-    in_db = True
+    if date < datetime.date(1990, 1, 1):
+        return {}, False
 
-    # try to look it up if it's not in the database yet
-    if rates_from_db is None:
-        in_db = False
-        rates = _get_yield_rates(date)
-    else:
-        rates = rates_from_db._values_as_dict()
+    one_day = datetime.timedelta(1)
+
+    rates = None
+    i = 0
+    while rates is None and i < 15:
+        # bounce back and forth moving away from "today" to find the nearest
+        # date that works
+        if i % 2 == 0:
+            date = date + datetime.timedelta(i)
+        else:
+            date = date - datetime.timedelta(i)
+        i += 1
+
+        # first check the database
+        rates_from_db = models.YieldRates.query.filter_by(date=date).first()
+        in_db = True
+
+        # try to look it up if it's not in the database yet
+        if rates_from_db is None:
+            in_db = False
+            rates = _get_yield_rates(date)
+        else:
+            rates = rates_from_db._values_as_dict()
 
     return rates, in_db
 
@@ -58,12 +81,12 @@ def _get_yield_rates(date):
         data_xml = content[0]
         data = {'date': date}
         for d in data_xml:
-            if d.tag in DTAGS:
+            if d.tag in DTAGS_DICT:
                 try:
                     rate = float(d.text)
                 except TypeError:
                     rate = None
-                data[DTAGS[d.tag]] = rate
+                data[DTAGS_DICT[d.tag]] = rate
     else:
         data = None
 

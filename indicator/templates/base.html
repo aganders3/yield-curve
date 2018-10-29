@@ -11,17 +11,24 @@
 
   <body>
     <div id="content-outer">
-      <h1>The Yield Curve</h1>
-      <h2>{{ date }}</h2>
+      <h1>This is The Yield Curve</h1>
+      <!-- <h2>For U.S. Treasury Bonds</h2> -->
+      <h2>{{ data[0].date }}</h2>
       <div id="content-inner">
 
           <div id="chart">
             <canvas id="chartCanvas"></canvas>
           </div>
 
-          <label for="datepicker">Date:</label>
-          <input type="text" id="datepicker">
-          <button id="addDataset">Add Dataset</button>
+          <!--
+          <div align="right">
+            See another yield curve! </br>
+            <label for="datepicker">Pick a Date:</label>
+            <input type="text" id="datepicker"> </br>
+            <button id="addDataset">Add to This Chart</button>
+            <button id="addDataset">See on New Chart</button>
+          </div>
+          -->
 
       </div>
 
@@ -31,29 +38,90 @@
           </p>
       </footer>
     </div>
+
   <script>
+    // convert data (python dict) to JSON
+    // TODO: this could be passed as JSON from the server
+    var all_data = JSON.parse('{{ data | tojson }}');
     var ctx = document.getElementById("chartCanvas");
     var chart = new Chart(ctx, {
-        // The type of chart we want to create
-        type: 'line',
+      type: 'line',
+      // data information
+      data: {
+          labels: ["1 Month", "3 Months", "6 Months", "1 Year",
+                   "2 Years", "3 Years", "5 Years", "7 Years",
+                   "10 Years", "20 Years", "30 Years"],
+          datasets: []
+      },
 
-        // The data for our dataset
-        data: {
-            labels: ["1 Month", "3 Months", "6 Months", "1 Year",
-                     "2 Years", "3 Years", "5 Years", "7 Years",
-                     "10 Years", "20 Years", "30 Years"],
-            datasets: [{
-              label: "{{ date }}",
-              borderColor: 'rgb(128, 128, 255)',
-              backgroundColor: 'rgba(0, 0, 0, 0)',
-              data: {{ data }},
-            }]
+      // chart configuration
+      options: {
+        title: {
+          display: true,
+          text: 'U.S. Treasury Bond Yield vs. Maturity',
+          fontSize: 30
         },
-        options: {}
+        scales: {
+          yAxes: [{
+            display: true,
+            scaleLabel: {
+              display: true,
+              labelString: 'Annual Yield [%]',
+              fontSize: 24
+            },
+            ticks: {
+              fontSize: 16
+            }
+          }],
+          xAxes: [{
+            display: true,
+            scaleLabel: {
+              display: true,
+              labelString: 'Maturity',
+              fontSize: 24
+            },
+            ticks: {
+              fontSize: 16
+            }
+          }]
+        },
+        legend: {
+          position: 'right',
+          labels: {
+              fontSize: 16
+          }
+        }
+      }
     });
+
+
+    // colors from color brewer
+    var blues = ['rgb(247,251,255)', 'rgb(222,235,247)', 'rgb(198,219,239)',
+                  'rgb(158,202,225)', 'rgb(107,174,214)', 'rgb(66,146,198)',
+                  'rgb(33,113,181)', 'rgb(8,69,148)']
+    var purps = ['rgb(252,251,253)', 'rgb(239,237,245)', 'rgb(218,218,235)',
+                  'rgb(188,189,220)', 'rgb(158,154,200)', 'rgb(128,125,186)',
+                  'rgb(106,81,163)', 'rgb(84,39,143)', 'rgb(63,0,125)']
+
+    // add a dataset for each pushed
+    for (var i = 0; i < all_data.length; i++)
+    {
+      var data = all_data[i];
+      var newDataset = {
+        label: data.label,
+        borderColor: purps[(purps.length - i - 1) % purps.length],
+        backgroundColor: purps[(purps.length - i - 1) % purps.length],
+        data: data.data,
+        fill: false
+      };
+
+      chart.data.datasets.push(newDataset);
+    }
+
+    window.chart.update();
   </script>
 
-  <script>
+  <!-- <script>
     var today = new Date();
     var picker = new Pikaday(
     {
@@ -97,6 +165,6 @@
 
       xhr.send();
     };
-  </script>
+  </script> -->
   </body>
 </html>
