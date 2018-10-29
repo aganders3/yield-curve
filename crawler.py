@@ -44,7 +44,7 @@ if __name__ == "__main__":
             db.session.commit()
             continue
 
-        rates, in_db = data.get_yield_rates(d)
+        rates, in_db = data.get_yield_rates(d, strict=True)
         if not args.quiet:
             print(d, rates)
         if rates is not None and not in_db:

@@ -25,9 +25,14 @@ DTAGS_DICT = {(XML_NS + dtag) : time for dtag, time in zip(DTAGS, TIMES)}
 #               (XML_NS + 'BC_20YEAR') : 'y20',
 #               (XML_NS + 'BC_30YEAR') : 'y30'}
 
-def get_yield_rates(date=None):
+def get_yield_rates(date=None, strict=False):
     if date is None:
         return models.YieldRates.query.all(), True
+
+    if strict:
+        window = 0 # don't searrh nearby dates
+    else:
+        window = 15 # search within a window (window/2 days forward and back)
 
     if date < datetime.date(1990, 1, 1):
         return {}, False
@@ -36,7 +41,8 @@ def get_yield_rates(date=None):
 
     rates = None
     i = 0
-    while rates is None and i < 15:
+
+    while rates is None and i <= window:
         # bounce back and forth moving away from "today" to find the nearest
         # date that works
         if i % 2 == 0:
