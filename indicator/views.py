@@ -36,7 +36,8 @@ def index(date_str=None):
         y, _ = data.get_yield_rates(date + delta[1])
         y_ = {}
         y_['data'] = ['{:.2f}'.format(y[t]) for t in data.TIMES]
-        y_['date'] = y['date'].isoformat()
+        # y_['date'] = y['date'].isoformat()
+        y_['date'] = y['date'].strftime("%A, %B %d, %Y")
         y_['label'] = delta[0]
         yield_rates.append(y_)
 
