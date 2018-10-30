@@ -20,10 +20,6 @@
           <div id="chart">
             <canvas id="chartCanvas"></canvas>
           </div>
-          <script>
-            var all_data = JSON.parse('{{ data | tojson }}');
-            plot_data(all_data, purp2);
-          </script>
 
           <div align="right">
             See another yield curve! </br>
@@ -33,7 +29,9 @@
             <button id="newChart">See on New Chart</button>
           </div>
           <script>
-            enable_picker(warm2);
+            var all_data = JSON.parse('{{ data | tojson }}');
+            var chart = plot_data(all_data, purp2);
+            enable_picker(chart, warm2);
           </script>
 
       </div>

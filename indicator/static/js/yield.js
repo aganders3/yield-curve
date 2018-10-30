@@ -84,9 +84,11 @@ function plot_data(all_data, colormap) {
   }
 
   chart.update();
+
+  return chart;
 }
 
-function enable_picker(colormap) {
+function enable_picker(chart, colormap) {
   var today = new Date();
   var picker = new Pikaday(
   {
