@@ -35,7 +35,7 @@ def get_yield_rates(date=None, strict=False):
         window = 15 # search within a window (window/2 days forward and back)
 
     if date < datetime.date(1990, 1, 1):
-        return {}, False
+        return None, False
 
     one_day = datetime.timedelta(1)
 

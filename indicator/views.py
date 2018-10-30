@@ -34,11 +34,18 @@ def index(date_str=None):
     yield_rates = []
     for delta in DEFAULT_DELTAS:
         y, _ = data.get_yield_rates(date + delta[1])
+        if y is None:
+            continue
         y_ = {}
-        y_['data'] = ['{:.2f}'.format(y[t]) for t in data.TIMES]
+        y_['data'] = [y[t] for t in data.TIMES]
         # y_['date'] = y['date'].isoformat()
         y_['date'] = y['date'].strftime("%A, %B %d, %Y")
-        y_['label'] = delta[0]
+        if date != today and delta[1] == relativedelta(0):
+            y_['label'] = date.isoformat()
+        else:
+            y_['label'] = delta[0]
+
+
         yield_rates.append(y_)
 
     # TODO: add TODAY no matter what?
