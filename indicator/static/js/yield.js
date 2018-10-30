@@ -15,7 +15,7 @@ var purp2 = ['rgb(255,247,243)', 'rgb(253,224,221)', 'rgb(252,197,192)',
              'rgb(250,159,181)', 'rgb(247,104,161)', 'rgb(221,52,151)',
              'rgb(174,1,126)', 'rgb(122,1,119)']
 
-function plot_data(all_data, colormap) {
+var plot_data = function(all_data, colormap) {
   var ctx = document.getElementById("chartCanvas");
   var chart = new Chart(ctx, {
     type: 'line',
@@ -88,7 +88,7 @@ function plot_data(all_data, colormap) {
   return chart;
 }
 
-function enable_picker(chart, colormap) {
+var enable_picker = function(chart, colormap) {
   var today = new Date();
   var picker = new Pikaday(
   {
@@ -102,11 +102,13 @@ function enable_picker(chart, colormap) {
   });
 
   document.getElementById('addDataset').addEventListener('click', function() {
+    var newDate = picker.toString();
+    if(newDate == ""){return;}
     var n = chart.data.datasets.length;
-    getJSON("yields/" + picker.toString(),
+    getJSON("yields/" + newDate,
       function(err, data) {
         var newDataset = {
-          label: picker.toString(),
+          label: newDate,
           borderColor: colormap[colormap.length - (n % colormap.length) - 1],
           backgroundColor: colormap[colormap.length - (n % colormap.length) - 1],
           data: data.data,
@@ -114,12 +116,18 @@ function enable_picker(chart, colormap) {
         };
 
         chart.data.datasets.push(newDataset);
-        window.chart.update();
+        chart.update();
       });
   });
 
   document.getElementById('newChart').addEventListener('click', function() {
-    location.href = picker.toString();
+    var newDate = picker.toString();
+    if(newDate == "")
+    {
+      location.href = "/";
+    } else {
+      location.href = picker.toString();
+    }
   });
 }
 
