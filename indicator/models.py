@@ -34,9 +34,11 @@ class YieldRates(db.Model):
 
         return repr_str
 
-    def _values_as_dict(self):
-        return {'date' : self.date, 'm1' : self.m1, 'm3' : self.m3,
-                'm6' : self.m6, 'y1' : self.y1, 'y2' : self.y2, 'y3' : self.y3,
-                'y5' : self.y5, 'y7' : self.y7, 'y10' : self.y10,
-                'y20' : self.y20, 'y30' : self.y30}
+    def as_dict(self):
+        return {'date' : self.date,
+                'data' : self._data_as_list(),
+                'label' : self.date.isoformat()}
 
+    def _data_as_list(self):
+        return [self.m1, self.m3, self.m6, self.y1, self.y2, self.y3, self.y5,
+                self.y7, self.y10, self.y20, self.y30]

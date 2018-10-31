@@ -14,7 +14,7 @@
     <div id="content-outer">
       <h1>This is The Yield Curve</h1>
       <!-- <h2>For U.S. Treasury Bonds</h2> -->
-      <h2>{{ data[0].date }}</h2>
+      <h2>{{ data[0].date.strftime("%A, %B %d, %Y") }}</h2>
       <div id="content-inner">
 
           <div id="chart">

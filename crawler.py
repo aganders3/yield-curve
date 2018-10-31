@@ -48,7 +48,9 @@ if __name__ == "__main__":
         if not args.quiet:
             print(d, rates)
         if rates is not None and not in_db:
-            y = models.YieldRates(**rates)
+            rates_dict['date'] = rates['date']
+            rates_dict = {tag : rate for tag, rate in zip(data.TIMES, rates['data'])}
+            y = models.YieldRates(**rates_dict)
             db.session.add(y)
         d += one_day
 

@@ -13,35 +13,25 @@ TIMES = ['m1', 'm3', 'm6', 'y1', 'y2', 'y3', 'y5', 'y7', 'y10', 'y20', 'y30']
 
 DTAGS_DICT = {(XML_NS + dtag) : time for dtag, time in zip(DTAGS, TIMES)}
 
-# DTAGS_DICT = {(XML_NS + 'BC_1MONTH') : 'm1',
-#               (XML_NS + 'BC_3MONTH') : 'm3',
-#               (XML_NS + 'BC_6MONTH') : 'm6',
-#               (XML_NS + 'BC_1YEAR')  : 'y1',
-#               (XML_NS + 'BC_2YEAR')  : 'y2',
-#               (XML_NS + 'BC_3YEAR')  : 'y3',
-#               (XML_NS + 'BC_5YEAR')  : 'y5',
-#               (XML_NS + 'BC_7YEAR')  : 'y7',
-#               (XML_NS + 'BC_10YEAR') : 'y10',
-#               (XML_NS + 'BC_20YEAR') : 'y20',
-#               (XML_NS + 'BC_30YEAR') : 'y30'}
-
 def get_yield_rates(date=None, strict=False):
+    """Get the yield rates
+    first try to pull from the DB, but fall back on scraping treasury.gov"""
+
     if date is None:
-        return models.YieldRates.query.all(), True
+        all_yield_rates = models.YieldRates.query.all()
+        return [y.as_dict() for y in all_yield_rates], True
 
     if strict:
-        window = 0 # don't searrh nearby dates
+        window = 0 # don't search nearby dates
     else:
         window = 15 # search within a window (window/2 days forward and back)
 
+    # we know there is no data before 1990
     if date < datetime.date(1990, 1, 1):
         return None, False
 
-    one_day = datetime.timedelta(1)
-
     rates = None
     i = 0
-
     while rates is None and i <= window:
         # bounce back and forth moving away from "today" to find the nearest
         # date that works
@@ -55,16 +45,19 @@ def get_yield_rates(date=None, strict=False):
         rates_from_db = models.YieldRates.query.filter_by(date=date).first()
         in_db = True
 
-        # try to look it up if it's not in the database yet
         if rates_from_db is None:
+            # try to look it up if it's not in the database yet
             in_db = False
             rates = _get_yield_rates(date)
         else:
-            rates = rates_from_db._values_as_dict()
+            # otherwise just return the data
+            rates = rates_from_db.as_dict()
 
     return rates, in_db
 
 def _get_yield_rates(date):
+    """Get the yield rates from treasury.gov"""
+
     request_filter = ('day(NEW_DATE) = {} and '
                       'month(NEW_DATE) = {} and '
                       'year(NEW_DATE) = {}')
@@ -86,13 +79,18 @@ def _get_yield_rates(date):
 
         data_xml = content[0]
         data = {'date': date}
+
+        data_ = {}
         for d in data_xml:
             if d.tag in DTAGS_DICT:
                 try:
                     rate = float(d.text)
                 except TypeError:
                     rate = None
-                data[DTAGS_DICT[d.tag]] = rate
+                data_[DTAGS_DICT[d.tag]] = rate
+
+        data['data'] = [data_[t] for t in TIMES]
+        data['label'] = data['date'].isoformat()
     else:
         data = None
 

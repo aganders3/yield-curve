@@ -36,17 +36,13 @@ def index(date_str=None):
         y, _ = data.get_yield_rates(date + delta[1])
         if y is None:
             continue
-        y_ = {}
-        y_['data'] = [y[t] for t in data.TIMES]
-        # y_['date'] = y['date'].isoformat()
-        y_['date'] = y['date'].strftime("%A, %B %d, %Y")
+
         if date != today and delta[1] == relativedelta(0):
-            y_['label'] = date.isoformat()
+            y['label'] = y['date'].isoformat()
         else:
-            y_['label'] = delta[0]
+            y['label'] = delta[0]
 
-
-        yield_rates.append(y_)
+        yield_rates.append(y)
 
     # TODO: add TODAY no matter what?
 
@@ -58,23 +54,18 @@ def index(date_str=None):
 
 # @login_required
 @app.route('/yields/', methods=['GET', 'POST'])
-def yields():
+def _yields():
     if request.method == 'GET':
-        yield_rates, _ = data.get_yield_rates()
+        y, _ = data.get_yield_rates()
 
-        return jsonify(list(map(lambda x: {'date' : x.date.isoformat(),
-                                           'data' : [x.m1, x.m3, x.m6,
-                                                     x.y1, x.y2, x.y3,
-                                                     x.y5, x.y7, x.y10,
-                                                     x.y20, x.y30]},
-                                yield_rates)))
+        return jsonify(y)
 
     if request.method == 'POST':
         # TODO - add the record for the date to the DB
         return jsonify(None), 401
 
 @app.route('/yields/<date_str>', methods=['GET', 'PUT'])
-def yield_(date_str):
+def _yield(date_str):
     try:
         yyyy, mm, dd = map(int, date_str.split('-'))
         date = datetime.date(yyyy, mm, dd)
@@ -82,17 +73,12 @@ def yield_(date_str):
         date = None
 
     if request.method == 'GET':
-        yield_rates, _ = data.get_yield_rates(date)
-
-        if date is not None and yield_rates is not None:
-            rates_only = [yield_rates['m1'], yield_rates['m3'], yield_rates['m6'],
-                          yield_rates['y1'], yield_rates['y2'], yield_rates['y3'],
-                          yield_rates['y5'], yield_rates['y7'], yield_rates['y10'],
-                          yield_rates['y20'], yield_rates['y30']]
-
-            return jsonify(date=date.isoformat(), data=rates_only)
+        if date is not None:
+            y, _ = data.get_yield_rates(date)
         else:
-            return jsonify(date=None, data=[])
+            y = None
+
+        return jsonify(y)
 
     if request.method == 'PUT':
         # TODO - modify the existing record

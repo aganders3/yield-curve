@@ -108,7 +108,7 @@ var enable_picker = function(chart, colormap) {
     getJSON("yields/" + newDate,
       function(err, data) {
         var newDataset = {
-          label: newDate,
+          label: data.label,
           borderColor: colormap[colormap.length - (n % colormap.length) - 1],
           backgroundColor: colormap[colormap.length - (n % colormap.length) - 1],
           data: data.data,
