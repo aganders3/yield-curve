@@ -7,7 +7,7 @@ import subprocess
 # create a new droplet if needed (-N)
 
 APP_NAME = 'indicator'
-DOMAIN = 'market-weather.com'
+DOMAIN = 'yield.aga3.xyz'
 
 USER = 'aganders3'
 PUB_KEY = '~/.ssh/id_rsa.pub'
@@ -56,7 +56,11 @@ def destroy(c):
 
     p = subprocess.run(delete_droplet)
 
-def select_droplet(prompt="Select a droplet: "):
+@task
+def list(c):
+    _, droplets = select_droplet("Droplets", False)
+
+def select_droplet(prompt="Select a droplet: ", wait=True):
     list_droplets = ['doctl', 'compute', 'droplet', 'list']
     list_droplets += ['--format', 'ID,Name,PublicIPv4']
     list_droplets += ['--no-header']
@@ -67,12 +71,15 @@ def select_droplet(prompt="Select a droplet: "):
     for i, droplet in enumerate(droplets):
         print(i, ":\t", droplet)
 
-    try:
-        selected = int(input(prompt))
-    except ValueError:
-        selected = None
-    finally:
-        return selected, droplets
+    selected = None
+    if wait:
+        try:
+            selected = int(input(prompt))
+        except ValueError:
+            print("Invalid selection")
+            pass
+
+    return selected, droplets
 
 @task
 def init(c):
@@ -224,4 +231,17 @@ def push_db(c):
 @task
 def pull_db(c):
     c.get('/run/gunicorn/{}.db'.format(APP_NAME))
+
+@task
+def install_certbot(c):
+    c.run('apt-get update')
+    c.run('apt-get install software-properties-common')
+    c.run('add-apt-repository universe')
+    c.run('add-apt-repository ppa:certbot/certbot')
+    c.run('apt-get update')
+    c.run('apt-get install certbot python-certbot-nginx')
+
+@task
+def run_certbot(c):
+    c.run('certbot --nginx --force-interactive')
 
